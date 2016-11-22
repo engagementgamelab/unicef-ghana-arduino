@@ -10,6 +10,7 @@
 
 const int EVENT_MIN = 5;
 const float PITCH_DELTA_TRIGGER = 20.0f;
+const float PERCENT_TRIGGER = 20.0f;
 
 // Create LSM9DS0 board instance.
 Adafruit_LSM9DS0     lsm(1000);  // Use I2C, ID #1000
@@ -20,6 +21,7 @@ Adafruit_Simple_AHRS ahrs(&lsm.getAccel(), &lsm.getMag());
 Timer t;
 
 float priorPitch = 0.0f;
+float priorOrientationAvg = 0.0f;
 float eventPitch = 0.0f;
 float basePitchAvg = 0.0f;
 float eventCurrentDelta = 0.0f;
@@ -53,12 +55,29 @@ void getPitch() {
   if (ahrs.getOrientation(&orientation))
   {
     float pitch = orientation.pitch;
+    float orientationAvg = (pitch + orientation.roll + orientation.heading) / 3;
+
     /* 'orientation' should have valid .roll and .pitch fields */
 //    Serial.print(F("Orientation: "));
 //    Serial.print(orientation.roll);
 //    Serial.print(F(" "));
 
-    if( (pitch - basePitchAvg) > PITCH_DELTA_TRIGGER && !eventInProgress ) {
+/*
+    Serial.println("---------");
+    Serial.print("P: ");
+    Serial.println(pitch);
+    Serial.print("R: ");
+    Serial.println(orientation.roll);
+    Serial.print("H: ");
+    Serial.println(orientation.heading);
+    
+    Serial.println( (pitch + orientation.roll + orientation.heading) / 3);
+*/
+
+    // sprintf(strDataCsv, "%d,%d,%d", pitch, orientation.roll, orientation.heading);
+    // saveData();
+
+/*    if( (pitch - basePitchAvg) > PITCH_DELTA_TRIGGER && !eventInProgress ) {
       
       eventInProgress = true;
       eventCurrentDelta = (pitch - basePitchAvg);
@@ -99,10 +118,51 @@ void getPitch() {
       }
 
     }
-    // else
-    //   Serial.println(orientation.pitch);
+
+*/
+    if( (orientationAvg - priorOrientationAvg) > PERCENT_TRIGGER && !eventInProgress ) {
+      
+      eventInProgress = true;
+      eventCurrentDelta = (pitch - basePitchAvg);
+
+      String msg = String("EVENT STARTED. Waiting for ") + EVENT_MIN +  String("s before recording.");
+      Serial.println(msg);
     
-    priorPitch = orientation.pitch;
+    }
+
+    if(eventInProgress) {
+      // Serial.println(eventCurrentDelta);  
+      // Serial.println(pitch);  
+
+      if( (orientationAvg - priorOrientationAvg) < PERCENT_TRIGGER ) {
+        
+        eventInProgress = false;
+        eventDuration = 0;
+
+        Serial.println(orientationAvg - priorOrientationAvg);  
+        Serial.println("EVENT CANCELLED");
+
+      }
+
+      eventDuration++;
+      // Serial.println(eventDuration);
+
+      if(eventDuration == EVENT_MIN) {
+
+        Serial.println("EVENT ENDED");
+        eventId++;
+        eventDuration = 0;
+        eventInProgress = false;
+
+        // sprintf(strDataCsv, "%d, %f, %d:%d:%d, %d/%d/%d", eventId, pitch, hour(), minute(), second(), month(), day(), year());
+
+        // saveData();
+
+      }
+
+    }
+    else
+      priorOrientationAvg = orientationAvg;
 
   }
   
