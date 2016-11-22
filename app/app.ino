@@ -4,8 +4,8 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_LSM9DS0.h>
 #include <Adafruit_Simple_AHRS.h>
-// #include <TimeLib.h>
-// #include <Time.h>
+#include <TimeLib.h>
+#include <Time.h>
 #include "Timer.h"
 
 const int EVENT_MIN = 5;
@@ -32,6 +32,7 @@ int eventId = 0;
 bool eventInProgress = false;
 
 char strDataCsv[120];
+File dateData;
 File sensorData;
 
 // Function to configure the sensors on the LSM9DS0 board
@@ -55,7 +56,20 @@ void getPitch() {
   if (ahrs.getOrientation(&orientation))
   {
     float pitch = orientation.pitch;
-    float orientationAvg = (pitch + orientation.roll + orientation.heading) / 3;
+    float roll = orientation.roll;
+    float heading = orientation.heading;
+    float orientationAvg = (pitch + roll + heading) / 3;
+
+    Serial.println(pitch);
+    Serial.println(roll);
+    Serial.println(heading);
+    Serial.println("-----");
+
+    eventId++;
+
+    sprintf(strDataCsv, "%d, %f, %f, %f, %f, %d:%d:%d, %d/%d/%d", eventId, pitch, roll, heading, orientationAvg, hour(), minute(), second(), month(), day(), year());
+
+    saveData();
 
     /* 'orientation' should have valid .roll and .pitch fields */
 //    Serial.print(F("Orientation: "));
@@ -120,6 +134,7 @@ void getPitch() {
     }
 
 */
+
     if( (orientationAvg - priorOrientationAvg) > PERCENT_TRIGGER && !eventInProgress ) {
       
       eventInProgress = true;
@@ -131,34 +146,31 @@ void getPitch() {
     }
 
     if(eventInProgress) {
-      // Serial.println(eventCurrentDelta);  
-      // Serial.println(pitch);  
 
       if( (orientationAvg - priorOrientationAvg) < PERCENT_TRIGGER ) {
         
         eventInProgress = false;
         eventDuration = 0;
 
-        Serial.println(orientationAvg - priorOrientationAvg);  
+        // Serial.println(orientationAvg - priorOrientationAvg);  
         Serial.println("EVENT CANCELLED");
 
       }
 
       eventDuration++;
-      // Serial.println(eventDuration);
 
-      if(eventDuration == EVENT_MIN) {
+      // if(eventDuration == EVENT_MIN) {
 
-        Serial.println("EVENT ENDED");
-        eventId++;
-        eventDuration = 0;
-        eventInProgress = false;
+      //   Serial.println("EVENT ENDED");
+      //   eventId++;
+      //   eventDuration = 0;
+      //   eventInProgress = false;
 
-        // sprintf(strDataCsv, "%d, %f, %d:%d:%d, %d/%d/%d", eventId, pitch, hour(), minute(), second(), month(), day(), year());
+      //   sprintf(strDataCsv, "%d, %f, %f, %f %d:%d:%d, %d/%d/%d", eventId, pitch, roll, heading, hour(), minute(), second(), month(), day(), year());
 
-        // saveData();
+      //   saveData();
 
-      }
+      // }
 
     }
     else
@@ -229,6 +241,19 @@ void setup(void)
   configureLSM9DS0();
 
   getBasePitch();
+
+  // Get today's date
+  dateData = SD.open("../date.txt", FILE_READ);
+  if(dateData)
+  {
+    String dataStr = dateData.read();
+    int dashIndex = dataStr.indexOf('-');
+    int dashIndex2 = dataStr.indexOf('-', dashIndex+1);
+
+    String firstValue = dataStr.substring(0, dashIndex);
+    String secondValue = dataStr.substring(dashIndex+1, dashIndex2);
+    String thirdValue = dataStr.substring(dashIndex2);
+  }
   
   t.every(1000, getPitch);
   t.every(5000, getBasePitch);
