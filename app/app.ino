@@ -32,6 +32,8 @@ int eventId = 0;
 bool eventInProgress = false;
 
 char strDataCsv[120];
+
+String dataFileName = "";
 File dateData;
 File sensorData;
 
@@ -67,7 +69,7 @@ void getPitch() {
 
     eventId++;
 
-    sprintf(strDataCsv, "%d, %f, %f, %f, %f, %d:%d:%d, %d/%d/%d", eventId, pitch, roll, heading, orientationAvg, hour(), minute(), second(), month(), day(), year());
+    sprintf(strDataCsv, "%d, %f, %f, %f, %f, %d:%d:%d", eventId, pitch, roll, heading, orientationAvg, hour(), minute(), second());
 
     saveData();
 
@@ -206,10 +208,10 @@ void getBasePitch() {
 void saveData() {
 
   // check the card is still there
-  if(SD.exists("data.csv")) { 
+  if(SD.exists(dataFileName)) { 
   
     // now append new data file
-    sensorData = SD.open("data.csv", FILE_WRITE);
+    sensorData = SD.open(dataFileName, FILE_WRITE);
 
     if(sensorData){
       sensorData.println(strDataCsv);
@@ -243,17 +245,34 @@ void setup(void)
   getBasePitch();
 
   // Get today's date
-  dateData = SD.open("../date.txt", FILE_READ);
-  if(dateData)
-  {
-    String dataStr = dateData.read();
-    int dashIndex = dataStr.indexOf('-');
-    int dashIndex2 = dataStr.indexOf('-', dashIndex+1);
+  if(SD.exists("date.txt")) {
+  
+    dateData = SD.open("date.txt");
+    if(dateData)
+    {
+      String dateStr = "";
 
-    String firstValue = dataStr.substring(0, dashIndex);
-    String secondValue = dataStr.substring(dashIndex+1, dashIndex2);
-    String thirdValue = dataStr.substring(dashIndex2);
+      while (dateData.available() != 0) {
+        dateStr = dateData.readStringUntil('\n');
+      }
+
+      int dashIndex = dateStr.indexOf('-');
+      int dashIndex2 = dateStr.indexOf('-', dashIndex+1);
+      int dashIndex3 = dateStr.indexOf('-', dashIndex2+1);
+
+      int day = dateStr.substring(0, dashIndex).toInt();
+      int month = dateStr.substring(dashIndex+1, dashIndex2).toInt();
+      int year = dateStr.substring(dashIndex2+1, dashIndex3).toInt();
+      
+      dateData.close();
+
+      dataFileName = "sensor_data/" + dateStr + ".csv";
+
+      setTime(8, 00, 00, day, month, year);
+    }  
   }
+  else
+    Serial.println("No date file!");
   
   t.every(1000, getPitch);
   t.every(5000, getBasePitch);
