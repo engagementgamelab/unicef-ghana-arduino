@@ -1,9 +1,12 @@
 #include <SPI.h>
 #include <SD.h>
 #include <Wire.h>
+// #include <FastGPIO.h>
+
 #include <Adafruit_Sensor.h>
 #include <Adafruit_LSM9DS0.h>
 #include <Adafruit_Simple_AHRS.h>
+
 #include <TimeLib.h>
 #include <Time.h>
 #include "Timer.h"
@@ -32,8 +35,8 @@ int eventId = 0;
 bool eventInProgress = false;
 
 char strDataCsv[120];
+char dataFileName[27];
 
-String dataFileName = "";
 File dateData;
 File sensorData;
 
@@ -73,70 +76,6 @@ void getPitch() {
 
     saveData();
 
-    /* 'orientation' should have valid .roll and .pitch fields */
-//    Serial.print(F("Orientation: "));
-//    Serial.print(orientation.roll);
-//    Serial.print(F(" "));
-
-/*
-    Serial.println("---------");
-    Serial.print("P: ");
-    Serial.println(pitch);
-    Serial.print("R: ");
-    Serial.println(orientation.roll);
-    Serial.print("H: ");
-    Serial.println(orientation.heading);
-    
-    Serial.println( (pitch + orientation.roll + orientation.heading) / 3);
-*/
-
-    // sprintf(strDataCsv, "%d,%d,%d", pitch, orientation.roll, orientation.heading);
-    // saveData();
-
-/*    if( (pitch - basePitchAvg) > PITCH_DELTA_TRIGGER && !eventInProgress ) {
-      
-      eventInProgress = true;
-      eventCurrentDelta = (pitch - basePitchAvg);
-
-      String msg = String("EVENT STARTED. Waiting for ") + EVENT_MIN +  String("s before recording.");
-      Serial.println(msg);
-    
-    }
-
-    if(eventInProgress) {
-      // Serial.println(eventCurrentDelta);  
-      // Serial.println(pitch);  
-      // Serial.println(basePitchAvg);  
-
-      if( (pitch - basePitchAvg) < eventCurrentDelta/2 ) {
-        
-        eventInProgress = false;
-        eventDuration = 0;
-
-        Serial.println("EVENT CANCELLED");
-
-      }
-
-      eventDuration++;
-      // Serial.println(eventDuration);
-
-      if(eventDuration == EVENT_MIN) {
-
-        Serial.println("EVENT ENDED");
-        eventId++;
-        eventDuration = 0;
-        eventInProgress = false;
-
-        // sprintf(strDataCsv, "%d, %f, %d:%d:%d, %d/%d/%d", eventId, pitch, hour(), minute(), second(), month(), day(), year());
-
-        saveData();
-
-      }
-
-    }
-
-*/
-
     if( (orientationAvg - priorOrientationAvg) > PERCENT_TRIGGER && !eventInProgress ) {
       
       eventInProgress = true;
@@ -160,20 +99,6 @@ void getPitch() {
       }
 
       eventDuration++;
-
-      // if(eventDuration == EVENT_MIN) {
-
-      //   Serial.println("EVENT ENDED");
-      //   eventId++;
-      //   eventDuration = 0;
-      //   eventInProgress = false;
-
-      //   sprintf(strDataCsv, "%d, %f, %f, %f %d:%d:%d, %d/%d/%d", eventId, pitch, roll, heading, hour(), minute(), second(), month(), day(), year());
-
-      //   saveData();
-
-      // }
-
     }
     else
       priorOrientationAvg = orientationAvg;
@@ -199,9 +124,6 @@ void getBasePitch() {
   }
     
   basePitchAvg /= 100;
-
-  // Serial.println("basePitchAvg: ");
-  // Serial.println(basePitchAvg);
   
 }
 
@@ -222,10 +144,37 @@ void saveData() {
     Serial.println("Error writing to file!");
 
 }
+
+void checkData() {
+
+  // check the card is still there
+  if(SD.exists(dataFileName)) { 
+  
+    // now append new data file
+    sensorData = SD.open(dataFileName, FILE_READ);
+
+    if(sensorData) 
+    {
+      t.oscillate(13, 5000, HIGH, 1);
+      sensorData.close(); // close the file
+    }
+    else {      
+      // Flash button LED
+      t.oscillate(13, 250, HIGH, 5);
+    }
+
+  }
+  else
+    Serial.println("Error reading file!");
+
+}
+
 void setup(void) 
 {
   Serial.begin(9600);
   Serial.println("Start");
+  
+  pinMode(13, OUTPUT);
 
   // Initialise the LSM9DS0 board.
   if(!lsm.begin())
@@ -242,7 +191,7 @@ void setup(void)
   // Setup the sensor gain and integration time.
   configureLSM9DS0();
 
-  getBasePitch();
+  // getBasePitch();
 
   // Get today's date
   if(SD.exists("date.txt")) {
@@ -266,7 +215,8 @@ void setup(void)
       
       dateData.close();
 
-      dataFileName = "sensor_data/" + dateStr + ".csv";
+      String strName = "sensor_data/" + dateStr + ".csv";
+      strName.toCharArray(dataFileName, 27);
 
       setTime(8, 00, 00, day, month, year);
     }  
@@ -275,7 +225,9 @@ void setup(void)
     Serial.println("No date file!");
   
   t.every(1000, getPitch);
-  t.every(5000, getBasePitch);
+  
+  // Checks data every 5 mins
+  t.every(300000, checkData);
 
 }
 
