@@ -1,11 +1,16 @@
-# Get date as DD-MM-YYYY
-currentDate=$(date +"%d-%m-%Y");
+#!/bin/sh
+opkg install cronie;
 
-mkdir -p /media/sdcard/sensor_data;
+cp startup.sh /etc/init.d/unicef_startup;
+cp shutdown.sh /etc/init.d/unicef_shutdown;
 
-# Save date to file for use by sketch
-echo "$currentDate" >> /media/sdcard/date.txt;
+chmod +x /etc/init.d/unicef_startup;
+chmod +x /etc/init.d/unicef_shutdown;
 
-touch "/media/sdcard/sensor_data/${currentDate}.csv";
+crontab -l > unicefcron;
 
-exec /sketch/sketch.elf;
+echo "* 8 * * 1-5 /etc/init.d/unicef_startup >/dev/null 2>&1" >> unicefcron;
+echo "* 15 * * 0,1,2,3,4,5,6 /etc/init.d/unicef_shutdown >/dev/null 2>&1" >> unicefcron;
+
+crontab unicefcron;
+rm unicefcron;
