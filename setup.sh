@@ -7,6 +7,8 @@ cp shutdown.sh /etc/init.d/unicef_shutdown;
 chmod +x /etc/init.d/unicef_startup;
 chmod +x /etc/init.d/unicef_shutdown;
 
+update-rc.d /etc/init.d/unicef_startup;
+
 crontab -l > unicefcron;
 
 echo "* 8 * * 1-5 /etc/init.d/unicef_startup >/dev/null 2>&1" >> unicefcron;
