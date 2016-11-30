@@ -25,4 +25,9 @@ fi
 
 echo "Starting Sketch for ${currentDate}." >> /media/sdcard/startup_log.txt
 
+# Enable classic wifi mode for now and boot maintenance app
+systemctl enable edison_config;
+configure_edison --enableOneTimeSetup;
+
+# Start monitor sketch
 exec /sketch/sketch.elf /dev/ttyGS0 /dev/ttyGS0;

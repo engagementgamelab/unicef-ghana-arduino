@@ -14,8 +14,8 @@ chmod +x startup.sh;
 chmod +x shutdown.sh;
 
 # Enable monitor service
-cp -rf ./services/unicef-monitor.service /lib/systemd/system/
-systemctl enable unicef-monitor
+cp -rf ./services/unicef-monitor.service /lib/systemd/system/;
+systemctl enable unicef-monitor;
 
 # Create cron jobs for start and stopping monitor
 crontab -l > unicefcron;
