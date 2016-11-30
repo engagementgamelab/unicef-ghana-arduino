@@ -1,12 +1,5 @@
 #!/bin/sh
 
-# disable edison edison_config
-systemctl stop edison_config
-systemctl disable edison_config
-systemctl disable wpa_supplicant
-systemctl stop blink-led
-systemctl disable blink-led
-
 # Get date as DD-MM-YYYY
 currentDate=$(date +"%d-%m-%Y");
 
@@ -30,6 +23,6 @@ if [ ! -f "/sketch/sketchpid" ]; then
 	touch "/sketch/sketchpid";
 fi
 
-echo "Starting Sketch for Date ${currentDate}." >> /media/sdcard/startup_log.txt
+echo "Starting Sketch for ${currentDate}." >> /media/sdcard/startup_log.txt
 
-exec /sketch/sketch.elf & echo $! >/sketch/sketchpid;
+exec /sketch/sketch.elf /dev/ttyGS0 /dev/ttyGS0;
