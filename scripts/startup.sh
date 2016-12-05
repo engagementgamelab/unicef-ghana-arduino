@@ -16,12 +16,13 @@ fi
 echo "$currentDate" > /media/sdcard/date.txt;
 
 fileName="/media/sdcard/sensor_data/${moduleId}/${currentDate}"
+i=0;
 # Create CSV file for today, incrementing if it exists
-if [ ! -f "${fileName}.csv" ]; then
-	touch "${fileName}.csv";
+if [ ! -f "${fileName}.0.csv" ]; then
+	touch "${fileName}.0.csv";
 else
 
-	if [[ -e $fileName.csv ]] ; then
+	if [[ -e $fileName.0.csv ]] ; then
     i=1;
     while [[ -e $fileName.$i.csv ]] ; do
         let i++;
@@ -31,6 +32,9 @@ else
 	fi
 
 fi
+
+# Save increment to file for use by sketch
+echo $i > /media/sdcard/day_increment.txt;
 
 # Create file to store sketch PID if missing
 if [ ! -f "/sketch/sketchpid" ]; then
