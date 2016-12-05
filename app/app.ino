@@ -1,3 +1,4 @@
+#include <string.h>
 #include <SPI.h>
 #include <SD.h>
 #include <Wire.h>
@@ -34,7 +35,7 @@ int eventId = 0;
 
 bool eventInProgress = false;
 
-char strDataCsv[120];
+char strDataCsv[20000];
 char dataFileName[27];
 
 File dateData;
@@ -72,9 +73,11 @@ void getPitch() {
 
     eventId++;
 
-    sprintf(strDataCsv, "%d, %f, %f, %f, %f, %d:%d:%d", eventId, pitch, roll, heading, orientationAvg, hour(), minute(), second());
+    char currentData[120];
+    sprintf(currentData, "%d, %f, %f, %f, %f, %d:%d:%d \n", eventId, pitch, roll, heading, orientationAvg, hour(), minute(), second());
 
-    saveData();
+    // Append data
+    strcat(strDataCsv, currentData);
 
     if( (orientationAvg - priorOrientationAvg) > PERCENT_TRIGGER && !eventInProgress ) {
       
@@ -108,36 +111,21 @@ void getPitch() {
   
 }
 
-
-void getBasePitch() {
-
-  if(eventInProgress)
-    return;
-
-  sensors_vec_t orientation;
-
-  for(int i = 0; i < 100; i++) {
-   
-    if (ahrs.getOrientation(&orientation))
-      basePitchAvg += orientation.pitch;
-  
-  }
-    
-  basePitchAvg /= 100;
-  
-}
-
 void saveData() {
+  Serial.println("saving");
 
   // check the card is still there
   if(SD.exists(dataFileName)) { 
   
+    Serial.println("saved");
     // now append new data file
     sensorData = SD.open(dataFileName, FILE_WRITE);
 
     if(sensorData){
       sensorData.println(strDataCsv);
       sensorData.close(); // close the file
+
+      sprintf(strDataCsv, "");
     }
   }
   else
@@ -150,17 +138,18 @@ void checkData() {
   // check the card is still there
   if(SD.exists(dataFileName)) { 
   
+      Serial.println("saving");
     // now append new data file
     sensorData = SD.open(dataFileName, FILE_READ);
 
     if(sensorData) 
     {
-      t.oscillate(13, 5000, HIGH, 1);
+      // t.oscillate(13, 5000, HIGH, 1);
       sensorData.close(); // close the file
     }
     else {      
       // Flash button LED
-      t.oscillate(13, 250, HIGH, 5);
+      // t.oscillate(13, 250, HIGH, 5);
     }
 
   }
@@ -225,10 +214,10 @@ void setup(void)
     Serial.println("No date file!");
   
   t.every(1000, getPitch);
-  
-  // Checks data every 5 mins
-  t.every(300000, checkData);
 
+  // Save data every xx seconds
+  t.every(5000, saveData);
+  
 }
 
 void loop(void) 
