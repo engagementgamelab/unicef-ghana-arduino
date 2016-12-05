@@ -112,12 +112,10 @@ void getPitch() {
 }
 
 void saveData() {
-  Serial.println("saving");
 
   // check the card is still there
   if(SD.exists(dataFileName)) { 
   
-    Serial.println("saved");
     // now append new data file
     sensorData = SD.open(dataFileName, FILE_WRITE);
 
@@ -137,8 +135,7 @@ void checkData() {
 
   // check the card is still there
   if(SD.exists(dataFileName)) { 
-  
-      Serial.println("saving");
+    
     // now append new data file
     sensorData = SD.open(dataFileName, FILE_READ);
 
