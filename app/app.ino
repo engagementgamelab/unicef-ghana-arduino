@@ -206,7 +206,7 @@ void setup(void)
       dateData.close();
 
       // Get today's day increment
-      if(SD.exists("date.txt")) {
+      if(SD.exists("day_increment.txt")) {
       
         dayIncrementData = SD.open("day_increment.txt");
         if(dayIncrementData) {
@@ -215,26 +215,34 @@ void setup(void)
             incrementStr = dayIncrementData.readStringUntil('\n');
           }
           dayIncrementData.close();
-        }
       
-        // Get device serial
-        serialNumData = SD.open("serial.txt");
-        if(serialNumData) {
+          // Get device serial
+          if(SD.exists("serial.txt")) {
 
-          while (serialNumData.available() != 0) {
-            serialStr = serialNumData.readStringUntil('\n');
+            serialNumData = SD.open("serial.txt");
+            if(serialNumData) {
+
+              while (serialNumData.available() != 0) {
+                serialStr = serialNumData.readStringUntil('\n');
+              }
+              serialNumData.close();
+            }
+
+            String strName = "sensor_data/" + serialStr + "/" + dateStr + "." + incrementStr + ".csv";
+            strName.toCharArray(dataFileName, 50);
+
+            Serial.println(dataFileName);
+
+            setTime(8, 00, 00, day, month, year);
+
           }
-          serialNumData.close();
+          else
+            Serial.println("No serial file!");
         }
-
-        String strName = "sensor_data/" + serialStr + "/" + dateStr + "." + incrementStr + ".csv";
-        strName.toCharArray(dataFileName, 50);
-
-        setTime(8, 00, 00, day, month, year);
 
       }
       else
-        Serial.println("No date file!");
+        Serial.println("No serial file!");
     }  
   }
   else
