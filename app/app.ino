@@ -36,9 +36,8 @@ int eventId = 0;
 bool eventInProgress = false;
 
 char strDataCsv[20000];
-char dataFileName[27];
+char dataFileName[50];
 
-File dateData;
 File sensorData;
 
 // Function to configure the sensors on the LSM9DS0 board
@@ -135,7 +134,7 @@ void checkData() {
 
   // check the card is still there
   if(SD.exists(dataFileName)) { 
-    
+
     // now append new data file
     sensorData = SD.open(dataFileName, FILE_READ);
 
@@ -157,6 +156,11 @@ void checkData() {
 
 void setup(void) 
 {
+
+  File dateData;
+  File dayIncrementData;
+  File serialNumData;
+
   Serial.begin(9600);
   Serial.println("Start");
   
@@ -177,8 +181,6 @@ void setup(void)
   // Setup the sensor gain and integration time.
   configureLSM9DS0();
 
-  // getBasePitch();
-
   // Get today's date
   if(SD.exists("date.txt")) {
   
@@ -186,6 +188,8 @@ void setup(void)
     if(dateData)
     {
       String dateStr = "";
+      String incrementStr = "";
+      String serialStr = "";
 
       while (dateData.available() != 0) {
         dateStr = dateData.readStringUntil('\n');
@@ -201,10 +205,36 @@ void setup(void)
       
       dateData.close();
 
-      String strName = "sensor_data/" + dateStr + ".csv";
-      strName.toCharArray(dataFileName, 27);
+      // Get today's day increment
+      if(SD.exists("date.txt")) {
+      
+        dayIncrementData = SD.open("day_increment.txt");
+        if(dayIncrementData) {
 
-      setTime(8, 00, 00, day, month, year);
+          while (dayIncrementData.available() != 0) {
+            incrementStr = dayIncrementData.readStringUntil('\n');
+          }
+          dayIncrementData.close();
+        }
+      
+        // Get device serial
+        serialNumData = SD.open("serial.txt");
+        if(serialNumData) {
+
+          while (serialNumData.available() != 0) {
+            serialStr = serialNumData.readStringUntil('\n');
+          }
+          serialNumData.close();
+        }
+
+        String strName = "sensor_data/" + serialStr + "/" + dateStr + "." + incrementStr + ".csv";
+        strName.toCharArray(dataFileName, 50);
+
+        setTime(8, 00, 00, day, month, year);
+
+      }
+      else
+        Serial.println("No date file!");
     }  
   }
   else

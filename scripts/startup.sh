@@ -12,6 +12,11 @@ if [ ! -f "/media/sdcard/date.txt" ]; then
 	touch "/media/sdcard/date.txt";
 fi
 
+# Create increment file if missing
+if [ ! -f "/media/sdcard/day_increment.txt" ]; then
+	touch "/media/sdcard/day_increment.txt";
+fi
+
 # Save date to file for use by sketch
 echo "$currentDate" > /media/sdcard/date.txt;
 
