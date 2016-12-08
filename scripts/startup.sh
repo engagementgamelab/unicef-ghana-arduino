@@ -49,4 +49,4 @@ fi
 echo "Starting Sketch for ${currentDate} and logging to ${fileName}.${i}.csv." >> /media/sdcard/startup_log.txt;
  	  	
 # Start monitor sketch
-exec /sketch/sketch.elf /dev/ttyGS0 /dev/ttyGS0 & exit 1;
+exec /sketch/sketch.elf /dev/ttyGS0 /dev/ttyGS0 & exit 0;
