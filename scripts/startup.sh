@@ -46,15 +46,7 @@ if [ ! -f "/sketch/sketchpid" ]; then
 	touch "/sketch/sketchpid";
 fi
 
-echo "Starting Sketch for ${currentDate}." >> /media/sdcard/startup_log.txt;
-
-# Enable classic wifi mode for now and boot maintenance app
-# systemctl enable edison_config;
-# configure_edison --enableOneTimeSetup;
-
-sleep 10;
-
+echo "Starting Sketch for ${currentDate} and logging to ${fileName}.${i}.csv." >> /media/sdcard/startup_log.txt;
+ 	  	
 # Start monitor sketch
-exec /sketch/sketch.elf /dev/ttyGS0 /dev/ttyGS0;
-
-exit 1;
+exec /sketch/sketch.elf /dev/ttyGS0 /dev/ttyGS0 & exit 1;
