@@ -1,7 +1,8 @@
 #!/bin/sh
 
-# Get date as DD-MM-YYYY and this unit's ID
+# Get date as DD-MM-YYYY, date and time, and this unit's ID
 currentDate=$(date +"%d-%m-%Y");
+currentDateTime=$(date +"%d-%m-%Y-%H-%M-%S");
 moduleId=`cat /factory/serial_number`;
 
 mkdir -p /media/sdcard/sensor_data;
@@ -18,7 +19,7 @@ if [ ! -f "/media/sdcard/day_increment.txt" ]; then
 fi
 
 # Save date to file for use by sketch
-echo "$currentDate" > /media/sdcard/date.txt;
+echo "$currentDateTime" > /media/sdcard/date.txt;
 
 fileName="/media/sdcard/sensor_data/${moduleId}/${currentDate}"
 i=0;

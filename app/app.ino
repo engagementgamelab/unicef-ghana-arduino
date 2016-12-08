@@ -187,21 +187,29 @@ void setup(void)
     dateData = SD.open("date.txt");
     if(dateData)
     {
-      String dateStr = "";
+      String dateTimeStr = "";
       String incrementStr = "";
       String serialStr = "";
 
       while (dateData.available() != 0) {
-        dateStr = dateData.readStringUntil('\n');
+        dateTimeStr = dateData.readStringUntil('\n');
       }
 
-      int dashIndex = dateStr.indexOf('-');
-      int dashIndex2 = dateStr.indexOf('-', dashIndex+1);
-      int dashIndex3 = dateStr.indexOf('-', dashIndex2+1);
+      int dashIndex = dateTimeStr.indexOf('-');
+      int dashIndex2 = dateTimeStr.indexOf('-', dashIndex+1);
+      int dashIndex3 = dateTimeStr.indexOf('-', dashIndex2+1);
+      int dashIndex4 = dateTimeStr.indexOf('-', dashIndex3+1);
+      int dashIndex5 = dateTimeStr.indexOf('-', dashIndex4+1);
+      int dashIndex6 = dateTimeStr.indexOf('-', dashIndex5+1);
 
-      int day = dateStr.substring(0, dashIndex).toInt();
-      int month = dateStr.substring(dashIndex+1, dashIndex2).toInt();
-      int year = dateStr.substring(dashIndex2+1, dashIndex3).toInt();
+      int day = dateTimeStr.substring(0, dashIndex).toInt();
+      int month = dateTimeStr.substring(dashIndex+1, dashIndex2).toInt();
+      int year = dateTimeStr.substring(dashIndex2+1, dashIndex3).toInt();
+      int hour = dateTimeStr.substring(dashIndex3+1, dashIndex4).toInt();
+      int minute = dateTimeStr.substring(dashIndex4+1, dashIndex5).toInt();
+      int second = dateTimeStr.substring(dashIndex5+1, dashIndex6).toInt();
+
+      String dateStr = dateTimeStr.substring(0, dashIndex) + "-" + dateTimeStr.substring(dashIndex+1, dashIndex2) + "-" + dateTimeStr.substring(dashIndex2+1, dashIndex3);
       
       dateData.close();
 
@@ -233,7 +241,7 @@ void setup(void)
 
             Serial.println(dataFileName);
 
-            setTime(8, 00, 00, day, month, year);
+            setTime(hour, minute, second, day, month, year);
 
           }
           else
@@ -251,7 +259,7 @@ void setup(void)
   t.every(1000, getPitch);
 
   // Save data every xx seconds
-  t.every(5000, saveData);
+  t.every(20000, saveData);
   
 }
 
