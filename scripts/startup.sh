@@ -47,7 +47,7 @@ if [ ! -f "/sketch/sketchpid" ]; then
 	touch "/sketch/sketchpid";
 fi
 
-echo "Starting Sketch for ${currentDate} and logging to ${fileName}.${i}.csv." >> /media/sdcard/startup_log.txt;
+echo "Starting Sketch at ${currentDateTime} and logging to ${fileName}.csv." >> /media/sdcard/startup_log.txt;
  	  	
 # Start monitor sketch
 exec /sketch/sketch.elf /dev/ttyGS0 /dev/ttyGS0 & exit 0;
