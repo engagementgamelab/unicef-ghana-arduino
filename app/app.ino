@@ -37,6 +37,7 @@ bool eventInProgress = false;
 
 char strDataCsv[20000];
 char dataFileName[50];
+char serialno[19];   // serial_number is 16 characters + 1 for null 0x00;
 
 File sensorData;
 
@@ -154,6 +155,29 @@ void checkData() {
 
 }
 
+void getSerialNum() {
+
+  // File pointer
+  FILE *fp;
+
+  // Read file
+  char *mode = "r";
+
+  // Open serial file
+  fp = fopen("/factory/serial_number",mode);
+  if (fp == NULL) {
+    Serial.println("Can't open serial number file!");
+    exit(1);
+  }
+  
+  // Read serial string and null-terminate it
+  fscanf(fp, "%s\0", serialno);                              
+  
+  // Close file
+  fclose(fp);
+
+}
+
 void setup(void) 
 {
 
@@ -165,6 +189,9 @@ void setup(void)
   Serial.println("Start");
   
   pinMode(13, OUTPUT);
+
+  // Get board's serial #
+  getSerialNum();
 
   // Initialise the LSM9DS0 board.
   if(!lsm.begin())
@@ -189,7 +216,7 @@ void setup(void)
     {
       String dateTimeStr = "";
       String incrementStr = "";
-      String serialStr = "";
+      String serialStr(serialno);
 
       while (dateData.available() != 0) {
         dateTimeStr = dateData.readStringUntil('\n');
@@ -223,29 +250,14 @@ void setup(void)
             incrementStr = dayIncrementData.readStringUntil('\n');
           }
           dayIncrementData.close();
-      
-          // Get device serial
-          if(SD.exists("serial.txt")) {
 
-            serialNumData = SD.open("serial.txt");
-            if(serialNumData) {
+          String strName = "sensor_data/" + serialStr + "/" + dateStr + "." + incrementStr + ".csv";
+          strName.toCharArray(dataFileName, 50);
 
-              while (serialNumData.available() != 0) {
-                serialStr = serialNumData.readStringUntil('\n');
-              }
-              serialNumData.close();
-            }
+          Serial.println(dataFileName);
 
-            String strName = "sensor_data/" + serialStr + "/" + dateStr + "." + incrementStr + ".csv";
-            strName.toCharArray(dataFileName, 50);
+          setTime(hour, minute, second, day, month, year);
 
-            Serial.println(dataFileName);
-
-            setTime(hour, minute, second, day, month, year);
-
-          }
-          else
-            Serial.println("No serial file!");
         }
 
       }
