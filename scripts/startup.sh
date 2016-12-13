@@ -19,7 +19,7 @@ if [ ! -f "/media/sdcard/day_increment.txt" ]; then
 fi
 
 # Save date to file for use by sketch
-echo "$currentDateTime" > /media/sdcard/date.txt;
+echo "$currentDate" > /media/sdcard/date.txt;
 
 fileName="/media/sdcard/sensor_data/${moduleId}/${currentDate}"
 i=0;
