@@ -3,7 +3,7 @@
 # Get date as DD-MM-YYYY, date and time, and this unit's ID
 currentDate=$(date +"%d-%m-%Y");
 currentDateTime=$(date +"%d-%m-%Y-%H-%M-%S");
-moduleId=`cat /factory/serial_number`;
+moduleId=`cat /media/sdcard/serial.txt`;
 
 mkdir -p /media/sdcard/sensor_data;
 mkdir -p /media/sdcard/sensor_data/$moduleId;
@@ -31,7 +31,7 @@ else
 	if [[ -e $fileName.0.csv ]] ; then
     i=1;
     while [[ -e $fileName.$i.csv ]] ; do
-        let i++;
+      let i++;
     done
     fileName=$fileName.$i;
     touch "${fileName}.csv";
