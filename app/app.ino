@@ -32,8 +32,8 @@ float eventCurrentDelta = 0.0f;
 
 int eventDuration = 0;
 int eventId = 0;
-
-bool eventInProgress = false;
+int loopCount = 0;
+int saveDataInterval = 20000;
 
 char strDataCsv[20000];
 char dataFileName[50];
@@ -72,42 +72,22 @@ void getPitch() {
     Serial.println("-----");
 
     eventId++;
+    loopCount++;
 
     char currentData[120];
-    sprintf(currentData, "%d, %f, %f, %f, %f, %d:%d:%d \n", eventId, pitch, roll, heading, orientationAvg, hour(), minute(), second());
+
+    // Append newline only if not last line before saving
+    if(loopCount < saveDataInterval/1000)
+      sprintf(currentData, "%d, %f, %f, %f, %f, %d:%d:%d \n", eventId, pitch, roll, heading, orientationAvg, hour(), minute(), second());
+    else {
+      Serial.println("last line ***");
+      sprintf(currentData, "%d, %f, %f, %f, %f, %d:%d:%d", eventId, pitch, roll, heading, orientationAvg, hour(), minute(), second());
+    }
 
     // Append data
-    strcat(strDataCsv, currentData);
-
-    if( (orientationAvg - priorOrientationAvg) > PERCENT_TRIGGER && !eventInProgress ) {
-      
-      eventInProgress = true;
-      eventCurrentDelta = (pitch - basePitchAvg);
-
-      String msg = String("EVENT STARTED. Waiting for ") + EVENT_MIN +  String("s before recording.");
-      Serial.println(msg);
-    
-    }
-
-    if(eventInProgress) {
-
-      if( (orientationAvg - priorOrientationAvg) < PERCENT_TRIGGER ) {
-        
-        eventInProgress = false;
-        eventDuration = 0;
-
-        // Serial.println(orientationAvg - priorOrientationAvg);  
-        Serial.println("EVENT CANCELLED");
-
-      }
-
-      eventDuration++;
-    }
-    else
-      priorOrientationAvg = orientationAvg;
+    strcat(strDataCsv, currentData);  
 
   }
-  
   
 }
 
@@ -123,6 +103,8 @@ void saveData() {
       sensorData.println(strDataCsv);
       sensorData.close(); // close the file
 
+      // Reset loop count and csv string
+      loopCount = 0;
       sprintf(strDataCsv, "");
     }
   }
@@ -139,15 +121,9 @@ void checkData() {
     // now append new data file
     sensorData = SD.open(dataFileName, FILE_READ);
 
-    if(sensorData) 
-    {
-      // t.oscillate(13, 5000, HIGH, 1);
-      sensorData.close(); // close the file
-    }
-    else {      
-      // Flash button LED
-      // t.oscillate(13, 250, HIGH, 5);
-    }
+    // close the file
+    if(sensorData)
+      sensorData.close();
 
   }
   else
@@ -164,7 +140,7 @@ void getSerialNum() {
   char *mode = "r";
 
   // Open serial file
-  fp = fopen("/factory/serial_number",mode);
+  fp = fopen("/factory/serial_number", mode);
   if (fp == NULL) {
     Serial.println("Can't open serial number file!");
     exit(1);
@@ -271,7 +247,7 @@ void setup(void)
   t.every(1000, getPitch);
 
   // Save data every xx seconds
-  t.every(20000, saveData);
+  t.every(saveDataInterval, saveData);
   
 }
 
