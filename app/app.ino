@@ -12,32 +12,25 @@
 #include <Time.h>
 #include "Timer.h"
 
-const int EVENT_MIN = 5;
-const float PITCH_DELTA_TRIGGER = 20.0f;
-const float PERCENT_TRIGGER = 20.0f;
+const int SAVE_DATA_INTERVAL = 20000;
 
-// Create LSM9DS0 board instance.
-Adafruit_LSM9DS0     lsm(1000);  // Use I2C, ID #1000
+// Create LSM9DS0 board instance; Use I2C, ID #1000
+Adafruit_LSM9DS0 lsm(1000); 
 
-// Create simple AHRS algorithm using the LSM9DS0 instance's accelerometer and magnetometer.
+// Create simple AHRS algorithm using the LSM9DS0 instance's accelerometer and magnetometer
 Adafruit_Simple_AHRS ahrs(&lsm.getAccel(), &lsm.getMag());
 
 Timer t;
 
-float priorPitch = 0.0f;
-float priorOrientationAvg = 0.0f;
-float eventPitch = 0.0f;
-float basePitchAvg = 0.0f;
-float eventCurrentDelta = 0.0f;
-
 int eventDuration = 0;
 int eventId = 0;
 int loopCount = 0;
-int saveDataInterval = 20000;
 
 char strDataCsv[20000];
 char dataFileName[50];
-char serialno[19];   // serial_number is 16 characters + 1 for null 0x00;
+
+// serial_number is 16 characters + 1 for null 0x00;
+char serialno[19];   
 
 File sensorData;
 
@@ -54,7 +47,7 @@ void configureLSM9DS0(void)
   lsm.setupGyro(lsm.LSM9DS0_GYROSCALE_245DPS);
 }
 
-void getPitch() {
+void getOrientation() {
   
   sensors_vec_t orientation;
 
@@ -66,10 +59,12 @@ void getPitch() {
     float heading = orientation.heading;
     float orientationAvg = (pitch + roll + heading) / 3;
 
+    /*
     Serial.println(pitch);
     Serial.println(roll);
     Serial.println(heading);
     Serial.println("-----");
+    */
 
     eventId++;
     loopCount++;
@@ -77,12 +72,10 @@ void getPitch() {
     char currentData[120];
 
     // Append newline only if not last line before saving
-    if(loopCount < saveDataInterval/1000)
+    if(loopCount < SAVE_DATA_INTERVAL/1000)
       sprintf(currentData, "%d, %f, %f, %f, %f, %d:%d:%d \n", eventId, pitch, roll, heading, orientationAvg, hour(), minute(), second());
-    else {
-      Serial.println("last line ***");
+    else
       sprintf(currentData, "%d, %f, %f, %f, %f, %d:%d:%d", eventId, pitch, roll, heading, orientationAvg, hour(), minute(), second());
-    }
 
     // Append data
     strcat(strDataCsv, currentData);  
@@ -94,43 +87,29 @@ void getPitch() {
 void saveData() {
 
   // check the card is still there
-  if(SD.exists(dataFileName)) { 
+  if(SD.exists(dataFileName)) {
   
     // now append new data file
     sensorData = SD.open(dataFileName, FILE_WRITE);
 
-    if(sensorData){
+    if(sensorData) {
+
       sensorData.println(strDataCsv);
       sensorData.close(); // close the file
 
       // Reset loop count and csv string
       loopCount = 0;
       sprintf(strDataCsv, "");
+    
     }
+
   }
   else
     Serial.println("Error writing to file!");
 
 }
 
-void checkData() {
-
-  // check the card is still there
-  if(SD.exists(dataFileName)) { 
-
-    // now append new data file
-    sensorData = SD.open(dataFileName, FILE_READ);
-
-    // close the file
-    if(sensorData)
-      sensorData.close();
-
-  }
-  else
-    Serial.println("Error reading file!");
-
-}
-
+// Get the device's serial #
 void getSerialNum() {
 
   // File pointer
@@ -154,37 +133,12 @@ void getSerialNum() {
 
 }
 
-void setup(void) 
-{
+// Get today's date as defined in /media/sdcard/date.txt
+void getDate() {
 
   File dateData;
   File dayIncrementData;
-  File serialNumData;
 
-  Serial.begin(9600);
-  Serial.println("Start");
-  
-  pinMode(13, OUTPUT);
-
-  // Get board's serial #
-  getSerialNum();
-
-  // Initialise the LSM9DS0 board.
-  if(!lsm.begin())
-  {
-    // There was a problem detecting the LSM9DS0 ... check your connections
-    Serial.print(F("Ooops, no LSM9DS0 detected ... Check your wiring or I2C ADDR!"));
-    while(1);
-  }
-
-  // Initialize SD card
-  if(!SD.begin())
-    Serial.println("Unable to init sd card!");
-
-  // Setup the sensor gain and integration time.
-  configureLSM9DS0();
-
-  // Get today's date
   if(SD.exists("date.txt")) {
   
     dateData = SD.open("date.txt");
@@ -230,30 +184,60 @@ void setup(void)
           String strName = "sensor_data/" + serialStr + "/" + dateStr + "." + incrementStr + ".csv";
           strName.toCharArray(dataFileName, 50);
 
-          Serial.println(dataFileName);
-
           setTime(hour, minute, second, day, month, year);
 
         }
 
       }
       else
-        Serial.println("No serial file!");
-    }  
+        Serial.println("No day increment file!");
+    }
+
   }
   else
     Serial.println("No date file!");
-  
-  t.every(1000, getPitch);
+
+}
+
+
+
+void setup(void) 
+{
+
+  Serial.begin(9600);
+
+  // Initialise the LSM9DS0 board.
+  if(!lsm.begin())
+  {
+    // There was a problem detecting the LSM9DS0 ... check your connections
+    Serial.print(F("Ooops, no LSM9DS0 detected ... Check your wiring or I2C ADDR!"));
+    while(1);
+  }
+
+  // Initialize SD card
+  if(!SD.begin())
+    Serial.println("Unable to init sd card!");
+
+  // Setup the sensor gain and integration time.
+  configureLSM9DS0();
+
+  // Get board's serial #
+  getSerialNum();
+
+  // Get today's date
+  getDate();
+
+  // Get device orientation every second
+  t.every(1000, getOrientation);
 
   // Save data every xx seconds
-  t.every(saveDataInterval, saveData);
+  t.every(SAVE_DATA_INTERVAL, saveData);
   
 }
 
 void loop(void) 
 {
-//  Serial.println("loop");
+
   t.update();
   
 }

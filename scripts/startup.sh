@@ -5,6 +5,7 @@ currentDate=$(date +"%d-%m-%Y");
 currentDateTime=$(date +"%d-%m-%Y-%H-%M-%S");
 moduleId=`cat /media/sdcard/serial.txt`;
 
+# Double check dirs exist, create if not
 mkdir -p /media/sdcard/sensor_data;
 mkdir -p /media/sdcard/sensor_data/$moduleId;
 
